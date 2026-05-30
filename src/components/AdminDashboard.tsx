@@ -57,7 +57,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     try {
       const id = await uploadQuestionToFirebase(newQuestion);
       if (id) {
-        alert('Đã tải câu hỏi lên Ngân hàng câu hỏi (Firebase) thành công!');
+        alert('Đã tải câu hỏi lên Ngân hàng câu hỏi (Google Sheets) thành công!');
         setNewQuestion({
           question: '',
           options: ['', '', '', ''],
@@ -66,7 +66,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           explanation: ''
         });
       } else {
-        alert('Có lỗi xảy ra hoặc Firebase chưa được cấu hình.');
+        alert('Có lỗi xảy ra khi lưu vào Google Sheets.');
       }
     } catch (e) {
       alert('Lỗi: ' + e);
@@ -377,10 +377,10 @@ CHỈ TRẢ VỀ CHUỖI JSON CHỨA MẢNG (ARRAY), không có markdown, không
               <div className="bg-sky-50 border border-sky-200 p-5 rounded-xl space-y-3">
                 <h4 className="font-bold text-sky-800 flex items-center gap-2">
                   <Share2 className="w-5 h-5" />
-                  Hướng dẫn kết nối dữ liệu Online toàn quốc
+                  Hướng dẫn kết nối dữ liệu Online toàn quốc (Google Sheets)
                 </h4>
                 <p className="text-sm text-sky-700 leading-relaxed">
-                  Ứng dụng này đã được cấu hình với cơ sở dữ liệu đám mây Firebase. Mọi lượt chơi từ bất kỳ học sinh nào trên toàn quốc đều được tự động lưu về một "Bảng Vàng Ghi Danh" chung.
+                  Ứng dụng này đã được kết nối với file Google Sheets của bạn. Mọi lượt chơi từ bất kỳ học sinh nào trên toàn quốc đều được tự động lưu về các trang tính "Leaderboard" và "Questions" của bạn.
                 </p>
                 <div className="bg-white p-4 rounded-lg border border-sky-100 mt-2">
                   <p className="text-sm font-semibold text-slate-700 mb-2">Để lan tỏa cuộc thi, Thầy/Cô chỉ cần:</p>
