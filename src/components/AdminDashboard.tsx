@@ -130,7 +130,7 @@ Chỉ trả về chuỗi JSON, không có định dạng markdown hay bất kỳ
       // 2. Send to Gemini to extract questions
       const prompt = `Đây là nội dung bộ câu hỏi trắc nghiệm được trích xuất từ file Word của giáo viên:
 """
-${text.substring(0, 5000)}
+${text.substring(0, 100000)}
 """
 
 Hãy đóng vai trò chuyên gia, bóc tách nội dung trên thành MỘT MẢNG (array) các đối tượng JSON chứa thông tin các câu hỏi.
