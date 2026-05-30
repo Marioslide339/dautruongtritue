@@ -91,15 +91,15 @@ export default function ResultScreen({
 
       if (docId) {
         setSyncStatus('success');
-        setSyncMessage('🎉 Đồng bộ hóa thành công lên Bảng Xếp Hạng Toàn Cầu (Firebase)!');
+        setSyncMessage('🎉 Đồng bộ hóa thành công lên Bảng Xếp Hạng Toàn Cầu (Google Sheets)!');
         sound.playVictory();
       } else {
-        throw new Error("Không thể lưu vào Firebase (kiểm tra cấu hình).");
+        throw new Error("Không thể lưu vào Google Sheets (kiểm tra link API).");
       }
     } catch (error: any) {
-      console.error('Firebase error:', error);
+      console.error('Google Sheets error:', error);
       setSyncStatus('error');
-      setSyncMessage(`Không thể liên kết qua internet: ${error.message || error}. Tuy nhiên điểm số đã được tự động lưu tủ kính cục bộ!`);
+      setSyncMessage(`Lỗi kết nối: Không thể gửi dữ liệu lên Google Sheets. Hãy báo cho giáo viên kiểm tra lại link API nhé!`);
     }
   };
 
