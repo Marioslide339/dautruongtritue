@@ -139,6 +139,7 @@ export default function App() {
                   onViewLeaderboard={() => setScreen('leaderboard')}
                   onAdminClick={() => setScreen('admin_login')}
                   highScore={null}
+                  cloudQuestionsCount={cloudQuestions.length}
                 />
               </motion.div>
             )}
