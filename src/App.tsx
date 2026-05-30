@@ -109,15 +109,17 @@ export default function App() {
               <span className="text-xs font-bold text-slate-600">Đấu Trường Trí Tuệ Tiểu Học</span>
             </div>
 
-            <button 
-              onClick={() => setIsApiModalOpen(true)}
-              className="flex items-center gap-2 bg-white hover:bg-slate-50 py-2 px-4 rounded-full border border-rose-200 shadow-sm transition-all cursor-pointer group"
-            >
-              <Settings className="w-4 h-4 text-slate-500 group-hover:text-slate-700" />
-              <span className="text-xs font-bold text-rose-500 group-hover:text-rose-600">
-                Lấy API key để sử dụng app
-              </span>
-            </button>
+            {screen === 'admin_dashboard' && (
+              <button 
+                onClick={() => setIsApiModalOpen(true)}
+                className="flex items-center gap-2 bg-white hover:bg-slate-50 py-2 px-4 rounded-full border border-rose-200 shadow-sm transition-all cursor-pointer group"
+              >
+                <Settings className="w-4 h-4 text-slate-500 group-hover:text-slate-700" />
+                <span className="text-xs font-bold text-rose-500 group-hover:text-rose-600">
+                  Lấy API key để sử dụng app
+                </span>
+              </button>
+            )}
           </header>
         )}
 
