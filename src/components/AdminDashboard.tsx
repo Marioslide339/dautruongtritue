@@ -1,29 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { LogOut, LayoutDashboard, Database, Settings, Plus, Save, RefreshCw, BarChart, Sparkles } from 'lucide-react';
+import { LogOut, LayoutDashboard, Database, Settings, Plus, RefreshCw, BarChart, Sparkles, FileText, Upload, Trophy, Share2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { CATEGORIES, Question } from '../questions';
 import { getGlobalLeaderboard, uploadQuestionToFirebase } from '../firebase';
 import { generateAiResponse } from '../gemini';
+import Leaderboard from './Leaderboard';
+import * as mammoth from 'mammoth';
 
 interface AdminDashboardProps {
   onLogout: () => void;
 }
 
 export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<'questions' | 'stats' | 'settings'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'leaderboard' | 'questions' | 'settings'>('stats');
 
   // Stats Data
   const [totalPlays, setTotalPlays] = useState(0);
   const [avgScore, setAvgScore] = useState(0);
   const [loadingStats, setLoadingStats] = useState(false);
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [isUploadingWord, setIsUploadingWord] = useState(false);
 
-  // Questions Data (Local Mocking for now, can be extended to Firebase)
+  // Questions Data
   const [newQuestion, setNewQuestion] = useState<Partial<Question>>({
     question: '',
     options: ['', '', '', ''],
     answerIndex: 0,
-    category: CATEGORIES.TOAN,
+    category: CATEGORIES.THUOC_LA,
     explanation: ''
   });
 
@@ -59,7 +62,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           question: '',
           options: ['', '', '', ''],
           answerIndex: 0,
-          category: CATEGORIES.TOAN,
+          category: CATEGORIES.THUOC_LA,
           explanation: ''
         });
       } else {
@@ -79,7 +82,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const handleGenerateWithAi = async () => {
     setIsGeneratingAi(true);
     try {
-      const prompt = `Bạn là một giáo viên chuyên ra đề thi tiểu học. Hãy tạo MỘT câu hỏi trắc nghiệm thuộc chuyên đề "${newQuestion.category}" dành cho học sinh tiểu học (lớp 1 - lớp 5).
+      const prompt = `Bạn là một giáo viên chuyên ra đề thi tiểu học. Hãy tạo MỘT câu hỏi trắc nghiệm thuộc chuyên đề "${newQuestion.category}" dành cho học sinh tiểu học (đặc biệt là lớp 3) về kỹ năng sống, tác hại của tệ nạn.
 Yêu cầu định dạng JSON chính xác:
 {
   "question": "Nội dung câu hỏi",
@@ -91,7 +94,6 @@ Chỉ trả về chuỗi JSON, không có định dạng markdown hay bất kỳ
       
       const response = await generateAiResponse(prompt);
       
-      // Clean json string if wrapped in markdown
       const cleanJson = response.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsed = JSON.parse(cleanJson);
 
@@ -107,6 +109,69 @@ Chỉ trả về chuỗi JSON, không có định dạng markdown hay bất kỳ
       alert(e.message || 'Lỗi khi gọi AI');
     } finally {
       setIsGeneratingAi(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingWord(true);
+    try {
+      // 1. Read Word file using mammoth
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      const text = result.value;
+
+      if (!text || text.trim().length === 0) {
+        throw new Error("Không tìm thấy chữ trong file Word.");
+      }
+
+      // 2. Send to Gemini to extract questions
+      const prompt = `Đây là nội dung bộ câu hỏi trắc nghiệm được trích xuất từ file Word của giáo viên:
+"""
+${text.substring(0, 5000)}
+"""
+
+Hãy đóng vai trò chuyên gia, bóc tách nội dung trên thành MỘT MẢNG (array) các đối tượng JSON chứa thông tin các câu hỏi.
+Mỗi câu hỏi phải có các trường sau:
+- "question": nội dung câu hỏi
+- "options": mảng 4 chuỗi chứa 4 đáp án (không kèm chữ A, B, C, D ở đầu)
+- "answerIndex": số nguyên (0, 1, 2, 3) chỉ ra đáp án đúng
+- "category": chuỗi tên chuyên mục (có thể phân tích từ nội dung hoặc dùng chung "Kỹ năng Phòng tránh 🛡️")
+- "explanation": lời giải thích (nếu trong đề không có, hãy tự sinh ra một lời giải thích ngắn gọn phù hợp).
+
+CHỈ TRẢ VỀ CHUỖI JSON CHỨA MẢNG (ARRAY), không có markdown, không có text nào khác. Ví dụ:
+[
+  { "question": "...", "options": ["...", "...", "...", "..."], "answerIndex": 0, "category": "Kỹ năng Phòng tránh 🛡️", "explanation": "..." }
+]`;
+
+      const response = await generateAiResponse(prompt);
+      const cleanJson = response.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsedArray = JSON.parse(cleanJson);
+
+      if (!Array.isArray(parsedArray)) {
+        throw new Error("Dữ liệu trả về không phải là mảng câu hỏi.");
+      }
+
+      // 3. Upload them to Firebase sequentially
+      let successCount = 0;
+      for (const q of parsedArray) {
+        if (q.question && q.options && q.options.length === 4) {
+          const id = await uploadQuestionToFirebase(q);
+          if (id) successCount++;
+        }
+      }
+
+      alert(`Đã xử lý file Word thành công! Tải lên được ${successCount}/${parsedArray.length} câu hỏi vào kho dữ liệu.`);
+      // Reset input
+      e.target.value = '';
+
+    } catch (err: any) {
+      console.error(err);
+      alert('Lỗi khi đọc file Word hoặc xử lý AI: ' + (err.message || err));
+    } finally {
+      setIsUploadingWord(false);
     }
   };
 
@@ -144,6 +209,14 @@ Chỉ trả về chuỗi JSON, không có định dạng markdown hay bất kỳ
             <BarChart className="w-5 h-5" /> Tổng quan số liệu
           </button>
           <button
+            onClick={() => setActiveTab('leaderboard')}
+            className={`p-4 rounded-2xl text-left font-bold text-sm transition-all flex items-center gap-3 ${
+              activeTab === 'leaderboard' ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-100'
+            }`}
+          >
+            <Trophy className="w-5 h-5" /> Bảng xếp hạng chung
+          </button>
+          <button
             onClick={() => setActiveTab('questions')}
             className={`p-4 rounded-2xl text-left font-bold text-sm transition-all flex items-center gap-3 ${
               activeTab === 'questions' ? 'bg-slate-800 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-100'
@@ -162,7 +235,7 @@ Chỉ trả về chuỗi JSON, không có định dạng markdown hay bất kỳ
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 bg-white rounded-3xl border border-slate-100 shadow-lg p-6 min-h-[500px]">
+        <div className="flex-1 bg-white rounded-3xl border border-slate-100 shadow-lg p-6 min-h-[500px] overflow-hidden">
           
           {/* STATS TAB */}
           {activeTab === 'stats' && (
@@ -184,11 +257,39 @@ Chỉ trả về chuỗi JSON, không có định dạng markdown hay bất kỳ
             </motion.div>
           )}
 
+          {/* LEADERBOARD TAB */}
+          {activeTab === 'leaderboard' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+              {/* Embed Leaderboard without the back button */}
+              <div className="mt-[-20px] scale-[0.95] origin-top">
+                <Leaderboard />
+              </div>
+            </motion.div>
+          )}
+
           {/* QUESTIONS TAB */}
           {activeTab === 'questions' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold text-slate-800">Thêm Câu Hỏi Mới</h3>
+              </div>
+
+              {/* Upload Word Section */}
+              <div className="bg-indigo-50 border border-indigo-200 p-5 rounded-2xl mb-6">
+                <h4 className="font-bold text-indigo-800 mb-2 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-indigo-600" />
+                  Đọc Đề Từ File Word
+                </h4>
+                <p className="text-xs text-indigo-600 mb-4">Tải lên file .docx (Word) chứa các câu hỏi trắc nghiệm. AI sẽ tự động đọc, bóc tách và đẩy lên hệ thống!</p>
+                <label className="flex items-center justify-center gap-2 w-full sm:w-auto px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl cursor-pointer transition-colors">
+                  {isUploadingWord ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+                  <span>{isUploadingWord ? "Đang xử lý bằng AI..." : "Chọn file Word (.docx)"}</span>
+                  <input type="file" accept=".docx" className="hidden" onChange={handleFileUpload} disabled={isUploadingWord} />
+                </label>
+              </div>
+
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-bold text-slate-700">Hoặc Thêm Thủ Công</h4>
                 <button
                   type="button"
                   onClick={handleGenerateWithAi}
@@ -196,9 +297,10 @@ Chỉ trả về chuỗi JSON, không có định dạng markdown hay bất kỳ
                   className="px-4 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-xl border border-purple-200 shadow-sm transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {isGeneratingAi ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                  <span>{isGeneratingAi ? 'Đang tạo bằng AI...' : 'Tạo tự động bằng AI'}</span>
+                  <span>{isGeneratingAi ? 'Đang tạo bằng AI...' : 'AI tự nghĩ 1 câu'}</span>
                 </button>
               </div>
+
               <form onSubmit={handleAddQuestion} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-600 mb-1">Chuyên mục</label>
@@ -217,7 +319,7 @@ Chỉ trả về chuỗi JSON, không có định dạng markdown hay bất kỳ
                     value={newQuestion.question}
                     onChange={(e) => setNewQuestion({ ...newQuestion, question: e.target.value })}
                     className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 font-semibold text-sm h-24 resize-none"
-                    placeholder="Ví dụ: 1 + 1 bằng mấy?"
+                    placeholder="Ví dụ: Thuốc lá có tác hại gì?"
                   />
                 </div>
                 
@@ -271,6 +373,26 @@ Chỉ trả về chuỗi JSON, không có định dạng markdown hay bất kỳ
           {activeTab === 'settings' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
               <h3 className="text-xl font-bold text-slate-800">Cài đặt Hệ thống</h3>
+              
+              <div className="bg-sky-50 border border-sky-200 p-5 rounded-xl space-y-3">
+                <h4 className="font-bold text-sky-800 flex items-center gap-2">
+                  <Share2 className="w-5 h-5" />
+                  Hướng dẫn kết nối dữ liệu Online toàn quốc
+                </h4>
+                <p className="text-sm text-sky-700 leading-relaxed">
+                  Ứng dụng này đã được cấu hình với cơ sở dữ liệu đám mây Firebase. Mọi lượt chơi từ bất kỳ học sinh nào trên toàn quốc đều được tự động lưu về một "Bảng Vàng Ghi Danh" chung.
+                </p>
+                <div className="bg-white p-4 rounded-lg border border-sky-100 mt-2">
+                  <p className="text-sm font-semibold text-slate-700 mb-2">Để lan tỏa cuộc thi, Thầy/Cô chỉ cần:</p>
+                  <ol className="list-decimal pl-5 space-y-1 text-sm text-slate-600">
+                    <li>Đảm bảo ứng dụng đã được đẩy (deploy) lên Vercel thành công.</li>
+                    <li>Copy đường link trang web của ứng dụng (ví dụ: <code className="bg-slate-100 text-rose-500 px-1 py-0.5 rounded">https://dautruong-tritue.vercel.app</code>)</li>
+                    <li>Gửi link đó vào nhóm Zalo lớp hoặc Fanpage của trường.</li>
+                    <li>Học sinh bấm vào link là có thể thi ngay trên điện thoại hoặc máy tính mà không cần cài đặt. Điểm số sẽ tự động nhảy vào Bảng xếp hạng!</li>
+                  </ol>
+                </div>
+              </div>
+
               <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-800 text-sm">
                 <p className="font-bold mb-1">Khu vực đang phát triển</p>
                 <p>Các cài đặt nâng cao như tùy chỉnh giao diện, xuất file Excel sẽ được cập nhật trong phiên bản tiếp theo.</p>
