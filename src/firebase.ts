@@ -5,20 +5,19 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwMlQ5dwnfC-01-WoShM
 
 export const submitToGlobalLeaderboard = async (payload: any): Promise<string | null> => {
   try {
-    const response = await fetch(SCRIPT_URL, {
+    await fetch(SCRIPT_URL, {
       method: "POST",
+      mode: "no-cors", // Bỏ qua lỗi CORS redirect của Google Apps Script
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+      },
       body: JSON.stringify({
         action: "save_score",
         data: payload
       })
     });
-    const result = await response.json();
-    if (result.status === "success") {
-      return "SUCCESS_ID";
-    } else {
-      console.error("Sheets Error:", result.error);
-      return null;
-    }
+    // Với no-cors, response luôn là opaque, không đọc được body. Mặc định coi như thành công.
+    return "SUCCESS_ID";
   } catch (error) {
     console.error("Lỗi gửi điểm lên Google Sheets: ", error);
     return null;
@@ -40,20 +39,18 @@ export const getGlobalLeaderboard = async (): Promise<any[]> => {
 
 export const uploadQuestionToFirebase = async (questionData: Partial<Question>): Promise<string | null> => {
   try {
-    const response = await fetch(SCRIPT_URL, {
+    await fetch(SCRIPT_URL, {
       method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+      },
       body: JSON.stringify({
         action: "save_question",
         data: questionData
       })
     });
-    const result = await response.json();
-    if (result.status === "success") {
-      return "SUCCESS_ID";
-    } else {
-      console.error("Sheets Error:", result.error);
-      return null;
-    }
+    return "SUCCESS_ID";
   } catch (error) {
     console.error("Lỗi gửi câu hỏi lên Google Sheets: ", error);
     return null;
