@@ -16,6 +16,8 @@ import AdminDashboard from './components/AdminDashboard';
 import ApiConfigModal from './components/ApiConfigModal';
 import { sound } from './audio';
 
+import { getGlobalQuestions } from './firebase';
+
 export default function App() {
   const [screen, setScreen] = useState<'welcome' | 'quiz' | 'result' | 'leaderboard' | 'admin_login' | 'admin_dashboard'>('welcome');
   const [isApiModalOpen, setIsApiModalOpen] = useState(false);
@@ -29,9 +31,21 @@ export default function App() {
   const [isMuted, setIsMuted] = useState(() => localStorage.getItem("primary_quiz_muted") === "true");
 
   // Game active states
+  const [cloudQuestions, setCloudQuestions] = useState<Question[]>([]);
   const [activeQuestions, setActiveQuestions] = useState<Question[]>([]);
   const [score, setScore] = useState(0);
   const [timeSpent, setTimeSpent] = useState(0);
+
+  // Fetch questions from cloud on mount
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      const q = await getGlobalQuestions();
+      if (q && q.length > 0) {
+        setCloudQuestions(q);
+      }
+    };
+    fetchQuestions();
+  }, []);
 
   // Keep audio module state updated
   useEffect(() => {
@@ -54,8 +68,16 @@ export default function App() {
     localStorage.setItem("primary_quiz_class", grade);
     localStorage.setItem("primary_quiz_school", school);
 
-    // Shuffle and pick random questions from the standard library
-    const examQuestions = getRandomQuestions(15);
+    // If we have at least 1 question from Cloud, shuffle and use them. Otherwise, use local.
+    let pool = cloudQuestions.length > 0 ? [...cloudQuestions] : getRandomQuestions(15);
+    
+    // Shuffle pool
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    
+    const examQuestions = pool.slice(0, 15);
     setActiveQuestions(examQuestions);
     setScore(0);
     setTimeSpent(0);
