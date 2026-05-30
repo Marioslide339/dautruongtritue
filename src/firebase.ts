@@ -26,13 +26,26 @@ export const submitToGlobalLeaderboard = async (payload: any): Promise<string | 
 
 export const getGlobalLeaderboard = async (): Promise<any[]> => {
   try {
-    const response = await fetch(SCRIPT_URL);
+    const response = await fetch(SCRIPT_URL + "?t=" + new Date().getTime());
     if (!response.ok) throw new Error("Network error");
     const data = await response.json();
     if (data.error) throw new Error(data.error);
     return data;
   } catch (error) {
     console.error("Lỗi lấy điểm từ Google Sheets: ", error);
+    return [];
+  }
+};
+
+export const getGlobalQuestions = async (): Promise<Question[]> => {
+  try {
+    const response = await fetch(SCRIPT_URL + "?action=get_questions&t=" + new Date().getTime());
+    if (!response.ok) throw new Error("Network error");
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+    return data as Question[];
+  } catch (error) {
+    console.error("Lỗi lấy câu hỏi từ Google Sheets: ", error);
     return [];
   }
 };
