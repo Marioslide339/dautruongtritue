@@ -21,13 +21,9 @@ export default function WelcomeScreen({
   highScore
 }: WelcomeScreenProps) {
   const [fullName, setFullName] = useState('');
-  const [className, setClassName] = useState('5A');
+  const [className, setClassName] = useState('3A');
   const [schoolName, setSchoolName] = useState('');
   const [error, setError] = useState('');
-
-  const gradeOptions = [
-    "1A", "1B", "1C", "2A", "2B", "2C", "3A", "3B", "3C", "4A", "4B", "4C", "5A", "5B", "5C", "Khác"
-  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,8 +76,8 @@ export default function WelcomeScreen({
         <h1 className="text-4xl md:text-5xl font-bold text-sky-600 tracking-tight mb-2 drop-shadow-sm font-sans">
           Đấu Trường Trí Tuệ
         </h1>
-        <p className="text-sm md:text-base text-sky-800 font-medium max-w-md mx-auto">
-          Ứng dụng ôn tập trắc nghiệm sinh động, vui khỏe dành riêng cho ước mơ của học sinh tiểu học! 🌟
+        <p className="text-sm md:text-base text-sky-800 font-medium max-w-md mx-auto mt-2">
+          Học mà chơi, chơi mà học! Cùng tìm hiểu kỹ năng sống phòng chống tệ nạn xã hội. 🛡️
         </p>
 
         {highScore !== null && (
@@ -107,10 +103,10 @@ export default function WelcomeScreen({
             Thể Lệ Đấu Trường:
           </p>
           <ul className="list-disc pl-5 space-y-1 text-gray-700">
-            <li>Hệ thống lựa chọn ngẫu nhiên <strong>15 câu hỏi</strong> không trùng lặp từ kho 50 câu sinh động.</li>
-            <li>Bao gồm các câu đố lý thú về <strong>Toán học 🔢, Tiếng Việt 📝, Khoa học 🌿, Địa lý 🗺️, Đố vui trí tuệ 💡</strong>.</li>
-            <li>Không giới hạn thời gian làm bài, nhưng hãy giải thật nhanh để thăng tiến Bảng Báo Danh!</li>
-            <li>Sau mỗi câu, bé sẽ nhận ngay phản hồi xem mình làm đúng hay chưa kèm giải thích chi tiết.</li>
+            <li>Hệ thống bao gồm <strong>15 câu hỏi</strong> trắc nghiệm sinh động và dễ hiểu.</li>
+            <li>Chủ đề: <strong>Tác hại của Thuốc lá 🚬, Ma túy 🚫, Rượu bia 🍺 và Kỹ năng phòng tránh 🛡️</strong>.</li>
+            <li>Dành riêng cho học sinh Khối 3 để trang bị kiến thức bảo vệ bản thân và gia đình.</li>
+            <li>Sau mỗi câu, bé sẽ nhận ngay phản hồi xem mình làm đúng hay chưa kèm giải thích chi tiết của Gia Sư AI.</li>
           </ul>
         </div>
 
@@ -143,18 +139,14 @@ export default function WelcomeScreen({
               <label className="block text-xs font-bold text-gray-600" htmlFor="class-name">
                 Chọn Lớp học <span className="text-rose-500">*</span>
               </label>
-              <select
+              <input
                 id="class-name"
+                type="text"
                 value={className}
                 onChange={(e) => setClassName(e.target.value)}
-                className="block w-full px-3 py-3 border border-sky-200 rounded-2xl bg-sky-50/20 text-gray-800 focus:outline-none focus:ring-4 focus:ring-sky-200 focus:border-sky-400 transition-all font-semibold"
-              >
-                {gradeOptions.map((grade) => (
-                  <option key={grade} value={grade}>
-                    Lớp {grade}
-                  </option>
-                ))}
-              </select>
+                placeholder="Ví dụ: 3A"
+                className="block w-full px-4 py-3 border border-sky-200 rounded-2xl bg-sky-50/20 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-sky-200 focus:border-sky-400 transition-all font-semibold"
+              />
             </div>
 
             <div className="space-y-1">
@@ -204,7 +196,7 @@ export default function WelcomeScreen({
               className="px-6 py-4 bg-yellow-50 hover:bg-yellow-100 text-yellow-800 font-bold rounded-2xl border border-yellow-200 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
             >
               <Trophy className="w-5 h-5 text-yellow-600" />
-              <span>Bảng Xếp Hạng</span>
+              <span>BẢNG VÀNG GHI DANH</span>
             </button>
           </div>
         </form>
