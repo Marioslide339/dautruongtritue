@@ -14,13 +14,7 @@ interface ResultScreenProps {
   schoolName: string;
   onRestart: () => void;
   onGoToLeaderboard: () => void;
-  onSaveLocalLeaderboard: (entry: {
-    fullName: string;
-    className: string;
-    schoolName: string;
-    score: number;
-    timeSpent: number;
-  }) => void;
+  onSaveLocalLeaderboard?: (entry: any) => void; // Legacy prop
 }
 
 export default function ResultScreen({
@@ -83,22 +77,14 @@ export default function ResultScreen({
     setSyncStatus('loading');
     setSyncMessage('Đang truyền điểm của bé lên hệ thống toàn cầu... 📡');
 
-    // First, always save locally so that their score is guaranteed to persist!
-    onSaveLocalLeaderboard({
-      fullName,
-      className,
-      schoolName,
-      score,
-      timeSpent
-    });
-
     try {
       const payload = {
         fullName,
         className,
         schoolName,
         score,
-        timeSpent
+        timeSpent,
+        timestamp: new Date().toISOString()
       };
 
       const docId = await submitToGlobalLeaderboard(payload);
