@@ -10,6 +10,7 @@ interface WelcomeScreenProps {
   onViewLeaderboard: () => void;
   onAdminClick: () => void;
   highScore: number | null;
+  cloudQuestionsCount?: number;
 }
 
 export default function WelcomeScreen({
@@ -18,7 +19,8 @@ export default function WelcomeScreen({
   onToggleMute,
   onViewLeaderboard,
   onAdminClick,
-  highScore
+  highScore,
+  cloudQuestionsCount = 0
 }: WelcomeScreenProps) {
   const [fullName, setFullName] = useState('');
   const [className, setClassName] = useState('3A');
@@ -81,11 +83,30 @@ export default function WelcomeScreen({
         </p>
 
         {highScore !== null && (
-          <div className="mt-4 inline-flex items-center gap-2 px-4 py-1.5 bg-yellow-100/90 text-yellow-800 border border-yellow-300 rounded-full text-xs font-bold shadow-sm">
+          <div className="mt-4 inline-flex items-center gap-2 px-4 py-1.5 bg-yellow-100/90 text-yellow-800 border border-yellow-300 rounded-full text-xs font-bold shadow-sm mr-2">
             <Trophy className="w-4 h-4 text-amber-500 fill-amber-500" />
             <span>Điểm cao nhất của máy bạn: {highScore}/15 đúng! ✨</span>
           </div>
         )}
+
+        <div className="mt-2 md:mt-4 inline-flex items-center gap-2 px-4 py-1.5 bg-sky-100 text-sky-800 border border-sky-300 rounded-full text-xs font-bold shadow-sm">
+          {cloudQuestionsCount > 0 ? (
+            <>
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+              </span>
+              <span>Online: Đã tải {cloudQuestionsCount} câu hỏi từ hệ thống</span>
+            </>
+          ) : (
+            <>
+              <span className="relative flex h-3 w-3">
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-slate-400"></span>
+              </span>
+              <span>Offline: Đang dùng bộ câu hỏi gốc</span>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Primary Card */}
