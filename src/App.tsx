@@ -4,9 +4,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Trophy, Settings, HelpCircle, Volume2, VolumeX, Lightbulb, GraduationCap } from 'lucide-react';
+import { Settings, GraduationCap } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Question, getRandomQuestions, LeaderboardEntry } from './questions';
+import { Question, getRandomQuestions } from './questions';
 import WelcomeScreen from './components/WelcomeScreen';
 import QuizSection from './components/QuizSection';
 import ResultScreen from './components/ResultScreen';
@@ -14,71 +14,15 @@ import Leaderboard from './components/Leaderboard';
 import AdminLogin from './components/AdminLogin';
 import AdminDashboard from './components/AdminDashboard';
 import ApiConfigModal from './components/ApiConfigModal';
-import { getApiKey } from './gemini';
 import { sound } from './audio';
-
-const INITIAL_MOCK_ENTRIES: LeaderboardEntry[] = [
-  {
-    id: "mock-1",
-    fullName: "Nguyễn Minh Khang",
-    className: "5A",
-    schoolName: "Tiểu học Nguyễn Du",
-    score: 15,
-    timeSpent: 128,
-    timestamp: "30/05/2026, 08:30:00"
-  },
-  {
-    id: "mock-2",
-    fullName: "Lê Quỳnh Chi",
-    className: "4B",
-    schoolName: "Tiểu học Lê Hồng Phong",
-    score: 14,
-    timeSpent: 145,
-    timestamp: "30/05/2026, 08:35:00"
-  },
-  {
-    id: "mock-3",
-    fullName: "Trần Hoàng Nam",
-    className: "3C",
-    schoolName: "Tiểu học Trần Quốc Toản",
-    score: 13,
-    timeSpent: 162,
-    timestamp: "30/05/2026, 08:40:00"
-  },
-  {
-    id: "mock-4",
-    fullName: "Phạm Bảo Lâm",
-    className: "5D",
-    schoolName: "Tiểu học Chu Văn An",
-    score: 12,
-    timeSpent: 110,
-    timestamp: "30/05/2026, 08:45:00"
-  },
-  {
-    id: "mock-5",
-    fullName: "Võ Thùy Dương",
-    className: "2A",
-    schoolName: "Tiểu học Minh Khai",
-    score: 11,
-    timeSpent: 185,
-    timestamp: "30/05/2026, 08:50:00"
-  }
-];
 
 export default function App() {
   const [screen, setScreen] = useState<'welcome' | 'quiz' | 'result' | 'leaderboard' | 'admin_login' | 'admin_dashboard'>('welcome');
   const [isApiModalOpen, setIsApiModalOpen] = useState(false);
 
-  // Automatically open Api Modal if no key is set when app loads
-  useEffect(() => {
-    if (!getApiKey()) {
-      setIsApiModalOpen(true);
-    }
-  }, []);
-  
   // Registration data
   const [fullName, setFullName] = useState(() => localStorage.getItem("primary_quiz_name") || "");
-  const [className, setClassName] = useState(() => localStorage.getItem("primary_quiz_class") || "5A");
+  const [className, setClassName] = useState(() => localStorage.getItem("primary_quiz_class") || "3A");
   const [schoolName, setSchoolName] = useState(() => localStorage.getItem("primary_quiz_school") || "");
   
   // App configs
@@ -88,21 +32,6 @@ export default function App() {
   const [activeQuestions, setActiveQuestions] = useState<Question[]>([]);
   const [score, setScore] = useState(0);
   const [timeSpent, setTimeSpent] = useState(0);
-
-  // Leaderboard data
-  const [localLeaderboard, setLocalLeaderboard] = useState<LeaderboardEntry[]>(() => {
-    const cached = localStorage.getItem("primary_quiz_leaderboard");
-    if (cached) {
-      try {
-        return JSON.parse(cached);
-      } catch (e) {
-        return INITIAL_MOCK_ENTRIES;
-      }
-    }
-    // Return mock entries by default so leaderboard is pre-populated and attractive
-    localStorage.setItem("primary_quiz_leaderboard", JSON.stringify(INITIAL_MOCK_ENTRIES));
-    return INITIAL_MOCK_ENTRIES;
-  });
 
   // Keep audio module state updated
   useEffect(() => {
@@ -125,7 +54,7 @@ export default function App() {
     localStorage.setItem("primary_quiz_class", grade);
     localStorage.setItem("primary_quiz_school", school);
 
-    // Shuffle and pick 15 random questions from standard library of 50
+    // Shuffle and pick random questions from the standard library
     const examQuestions = getRandomQuestions(15);
     setActiveQuestions(examQuestions);
     setScore(0);
@@ -138,37 +67,6 @@ export default function App() {
     setTimeSpent(duration);
     setScreen('result');
   };
-
-  const handleSaveLocalLeaderboard = (entry: {
-    fullName: string;
-    className: string;
-    schoolName: string;
-    score: number;
-    timeSpent: number;
-  }) => {
-    const newEntry: LeaderboardEntry = {
-      id: `local-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-      fullName: entry.fullName,
-      className: entry.className,
-      schoolName: entry.schoolName,
-      score: entry.score,
-      timeSpent: entry.timeSpent,
-      timestamp: new Date().toLocaleString("vi-VN")
-    };
-
-    const updated = [newEntry, ...localLeaderboard];
-    setLocalLeaderboard(updated);
-    localStorage.setItem("primary_quiz_leaderboard", JSON.stringify(updated));
-  };
-
-  const handleClearLocalLeaderboard = () => {
-    setLocalLeaderboard([]);
-    localStorage.setItem("primary_quiz_leaderboard", JSON.stringify([]));
-  };
-
-  const peakScore = localLeaderboard.length > 0 
-    ? Math.max(...localLeaderboard.map((e) => e.score)) 
-    : null;
 
   return (
     <div className="min-h-screen bg-slate-50 relative overflow-hidden flex flex-col justify-between select-none pb-8">
@@ -218,7 +116,7 @@ export default function App() {
                   onToggleMute={handleToggleMute}
                   onViewLeaderboard={() => setScreen('leaderboard')}
                   onAdminClick={() => setScreen('admin_login')}
-                  highScore={peakScore}
+                  highScore={null}
                 />
               </motion.div>
             )}
@@ -261,7 +159,7 @@ export default function App() {
                   schoolName={schoolName}
                   onRestart={() => handleStartQuiz(fullName, className, schoolName)}
                   onGoToLeaderboard={() => setScreen('leaderboard')}
-                  onSaveLocalLeaderboard={handleSaveLocalLeaderboard}
+                  onSaveLocalLeaderboard={() => {}} // Legacy prop
                 />
               </motion.div>
             )}
@@ -275,8 +173,6 @@ export default function App() {
                 transition={{ duration: 0.25 }}
               >
                 <Leaderboard
-                  localEntries={localLeaderboard}
-                  onClearLocalLeaderboard={handleClearLocalLeaderboard}
                   onBack={() => setScreen('welcome')}
                 />
               </motion.div>
