@@ -1,0 +1,6 @@
+{
+  "name": "Quiz App Tiểu học",
+  "description": "Ứng dụng trắc nghiệm sinh động dành cho học sinh tiểu học từ 6-11 tuổi, ngân hàng 50 câu hỏi phong phú, âm thanh vui nhộn, bảng xếp hạng và đồng bộ Google Sheets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
